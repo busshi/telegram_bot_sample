@@ -1,0 +1,20 @@
+#!/bin/bash
+
+Dest="$1"
+zone="$2"
+token="$3"
+
+res="🏖 Holidays in France: zone $zone 🏝\n\n"
+
+req=$( curl -s 'http://media.education.gouv.fr/ics/Calendrier_Scolaire_Zone_'$zone'.ics' | grep 'DTSTART\|DESCRIPTION' | sed 's/DESCRIPTION://g' | sed 's/DTSTART;VALUE=DATE://g' | sed '$!N;s/\n/\|/' )
+while read line; do
+        name=$( echo "$line" | cut -d\| -f1 )
+        vac=$( echo "$line" | cut -d\| -f2 )
+        vac=$( date --date "$vac" | cut -d, -f1 )
+        res+="• $name :\n$vac\n\n"
+done <<< "$req"
+
+res=$( echo -e "$res" | sed 's/-e//g' )
+curl -s --data 'chat_id='$Dest --data-urlencode 'text='"$res" 'https://api.telegram.org/bot'$token'/sendMessage' &> /dev/null
+
+exit 0
